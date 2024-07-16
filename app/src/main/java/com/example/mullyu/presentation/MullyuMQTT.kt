@@ -34,7 +34,6 @@ class MullyuMQTT() {
                     message?.let {
                         println("Received message: ${String(it.payload)}")
                     }
-                    print("${topic} from MQTT message arrived : ${message.toString()}")
                 }
 
                 override fun deliveryComplete(token: IMqttDeliveryToken?) {

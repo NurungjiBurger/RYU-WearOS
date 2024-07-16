@@ -16,6 +16,7 @@ class MullyuViewModel : ViewModel() {
         Mullyu(R.drawable.chocolate, "Gana Chocolate", "15", false),
         Mullyu(R.drawable.galaxyring, "Galaxy Ring", "1", false)
     )
+    
 
     private val _imageIndex = MutableStateFlow(0)
     private val _mullyuData = MutableStateFlow(Datas[0])

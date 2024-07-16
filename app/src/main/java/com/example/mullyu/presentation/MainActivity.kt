@@ -67,7 +67,8 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 
 class MainActivity : ComponentActivity() {
     //private lateinit var mullyuHTTP: MullyuHTTP
-    private lateinit var mullyuMQTT: MullyuMQTT
+
+    //private lateinit var mullyuMQTT: MullyuMQTT
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -78,7 +79,7 @@ class MainActivity : ComponentActivity() {
 //    mullyuHTTP.init() // Initialize if needed
 //    mullyuHTTP.connect() // Connect to WebSocket
 
-        mullyuMQTT = MullyuMQTT()
+        //mullyuMQTT = MullyuMQTT()
 
 //        mullyuMQTT.connect(object : MqttCallback {
 //            override fun connectionLost(cause: Throwable?) {
@@ -98,7 +99,9 @@ class MainActivity : ComponentActivity() {
 
         //mullyuMQTT.connect()
         //mullyuHTTP.connect()
-        mullyuMQTT.connectToMQTTBroker()
+
+
+        //mullyuMQTT.connectToMQTTBroker()
 
         setContent {
             val viewModel: MullyuViewModel by viewModels()
@@ -135,13 +138,13 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun sendMQTTMessage(message: String) {
-        mullyuMQTT.sendMQTTMessage(message)
+        //mullyuMQTT.sendMQTTMessage(message)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         //mullyuHTTP.disconnect()
-        mullyuMQTT.disconnect()
+        //mullyuMQTT.disconnect()
     }
 
 
@@ -156,7 +159,9 @@ private fun Mullyu(
 ) {
 
     Column(
-        modifier = modifier.padding(16.dp),
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -165,10 +170,12 @@ private fun Mullyu(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
+            Spacer(modifier = Modifier.width(16.dp)) // 왼쪽에 간격 추가
+
             Image(
                 painter = painterResource(id = data.imageName),
                 contentDescription = null,
-                modifier = Modifier.size(64.dp)
+                modifier = Modifier.size(64.dp) // 고정된 이미지 크기
             )
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -182,7 +189,6 @@ private fun Mullyu(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-
             Column(
                 verticalArrangement = Arrangement.Center
             ) {
@@ -191,7 +197,8 @@ private fun Mullyu(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
-                    textAlign = TextAlign.Start
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.width(100.dp) // 고정된 텍스트 너비
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -200,7 +207,8 @@ private fun Mullyu(
                     text = "수량 : ${data.quantity}",
                     fontSize = 16.sp,
                     color = Color.White,
-                    textAlign = TextAlign.Start
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.width(100.dp) // 고정된 텍스트 너비
                 )
             }
         }
@@ -221,7 +229,9 @@ private fun Mullyu(
                 onConfirmClick()
                 sendMQTTMessage(data.name)
             },
-            modifier = Modifier.fillMaxWidth()//Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier
+                .fillMaxWidth() // 고정된 버튼 너비
+                .height(48.dp) // 고정된 버튼 높이
         ) {
             Text(text = "Confirm", color = Color.White)
         }
