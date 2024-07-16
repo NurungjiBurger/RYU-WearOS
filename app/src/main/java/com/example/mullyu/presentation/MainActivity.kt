@@ -8,6 +8,7 @@ package com.example.mullyu.presentation
 
 import MullyuViewModel
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -56,6 +57,7 @@ import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.placeholder
 import com.example.mullyu.R
 import com.example.mullyu.presentation.theme.MullyuTheme
+import com.example.mullyu.presentation.MullyuMQTT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -65,7 +67,8 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 
 class MainActivity : ComponentActivity() {
     //private lateinit var mullyuHTTP: MullyuHTTP
-    private lateinit var mullyuMQTT: MullyuMQTT
+
+    //private lateinit var mullyuMQTT: MullyuMQTT
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -76,27 +79,29 @@ class MainActivity : ComponentActivity() {
 //    mullyuHTTP.init() // Initialize if needed
 //    mullyuHTTP.connect() // Connect to WebSocket
 
-        mullyuMQTT = MullyuMQTT(object : MqttCallback {
-            override fun connectionLost(cause: Throwable?) {
-                println("MQTT connection lost: ${cause?.message}")
-            }
+        //mullyuMQTT = MullyuMQTT()
 
-            override fun messageArrived(topic: String?, message: MqttMessage?) {
-                println("Message received: ${message?.toString()}")
-            }
-
-            override fun deliveryComplete(token: IMqttDeliveryToken?) {
-                println("Delivery complete")
-            }
-        })
-
-        GlobalScope.launch(Dispatchers.IO) {
-            println("MQTT 커넥트 !")
-            mullyuMQTT.connect()
-        }
+//        mullyuMQTT.connect(object : MqttCallback {
+//            override fun connectionLost(cause: Throwable?) {
+//                println("MQTT connect")
+//            }
+//
+//            override fun messageArrived(topic: String?, message: MqttMessage?) {
+//                // 메시지가 도착했을 때의 행동을 정의할 수 있습니다.
+//                println("MQTT message arrive")
+//            }
+//
+//            override fun deliveryComplete(token: IMqttDeliveryToken?) {
+//                // 메시지 배달이 완료되었을 때의 행동을 정의할 수 있습니다.
+//                println("MQTT message delivered")
+//            }
+//        })
 
         //mullyuMQTT.connect()
         //mullyuHTTP.connect()
+
+
+        //mullyuMQTT.connectToMQTTBroker()
 
         setContent {
             val viewModel: MullyuViewModel by viewModels()
@@ -121,6 +126,9 @@ class MainActivity : ComponentActivity() {
                         viewModel.nextImage()
                         // Optional: Send a message through WebSocket here if needed
                     },
+                    sendMQTTMessage = { message ->
+                        sendMQTTMessage(message)
+                    },
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.Black)
@@ -129,10 +137,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun sendMQTTMessage(message: String) {
+        //mullyuMQTT.sendMQTTMessage(message)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         //mullyuHTTP.disconnect()
-        mullyuMQTT.disconnect()
+        //mullyuMQTT.disconnect()
     }
 
 
@@ -142,11 +154,14 @@ class MainActivity : ComponentActivity() {
 private fun Mullyu(
     data: Mullyu,
     onConfirmClick: () -> Unit,
+    sendMQTTMessage: (message: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
 
     Column(
-        modifier = modifier.padding(16.dp),
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -155,10 +170,12 @@ private fun Mullyu(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
+            Spacer(modifier = Modifier.width(16.dp)) // 왼쪽에 간격 추가
+
             Image(
                 painter = painterResource(id = data.imageName),
                 contentDescription = null,
-                modifier = Modifier.size(64.dp)
+                modifier = Modifier.size(64.dp) // 고정된 이미지 크기
             )
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -172,7 +189,6 @@ private fun Mullyu(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-
             Column(
                 verticalArrangement = Arrangement.Center
             ) {
@@ -181,7 +197,8 @@ private fun Mullyu(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
-                    textAlign = TextAlign.Start
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.width(100.dp) // 고정된 텍스트 너비
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -190,7 +207,8 @@ private fun Mullyu(
                     text = "수량 : ${data.quantity}",
                     fontSize = 16.sp,
                     color = Color.White,
-                    textAlign = TextAlign.Start
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.width(100.dp) // 고정된 텍스트 너비
                 )
             }
         }
@@ -207,8 +225,13 @@ private fun Mullyu(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = onConfirmClick,
-            modifier = Modifier.fillMaxWidth()//Modifier.align(Alignment.CenterHorizontally)
+            onClick = {
+                onConfirmClick()
+                sendMQTTMessage(data.name)
+            },
+            modifier = Modifier
+                .fillMaxWidth() // 고정된 버튼 너비
+                .height(48.dp) // 고정된 버튼 높이
         ) {
             Text(text = "Confirm", color = Color.White)
         }

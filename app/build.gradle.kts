@@ -68,8 +68,7 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
-
     implementation(libs.okhttp)
-    implementation(libs.mqtt)
-    implementation(libs.mqtt.android)
+    implementation(libs.org.eclipse.paho.client.mqttv3)
+    implementation(libs.org.eclipse.paho.android.service)
 }
