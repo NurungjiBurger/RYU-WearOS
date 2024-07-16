@@ -56,6 +56,9 @@ import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.placeholder
 import com.example.mullyu.R
 import com.example.mullyu.presentation.theme.MullyuTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttMessage
@@ -73,23 +76,26 @@ class MainActivity : ComponentActivity() {
 //    mullyuHTTP.init() // Initialize if needed
 //    mullyuHTTP.connect() // Connect to WebSocket
 
-//        mullyuMQTT = MullyuMQTT(object : MqttCallback {
-//            override fun connectionLost(cause: Throwable?) {
-//                println("MQTT connection lost: ${cause?.message}")
-//            }
-//
-//            override fun messageArrived(topic: String?, message: MqttMessage?) {
-//                println("Message received: ${message?.toString()}")
-//            }
-//
-//            override fun deliveryComplete(token: IMqttDeliveryToken?) {
-//                println("Delivery complete")
-//            }
-//        })
+        mullyuMQTT = MullyuMQTT(object : MqttCallback {
+            override fun connectionLost(cause: Throwable?) {
+                println("MQTT connection lost: ${cause?.message}")
+            }
 
-        mullyuMQTT = MullyuMQTT()
+            override fun messageArrived(topic: String?, message: MqttMessage?) {
+                println("Message received: ${message?.toString()}")
+            }
 
-        mullyuMQTT.connect()
+            override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                println("Delivery complete")
+            }
+        })
+
+        GlobalScope.launch(Dispatchers.IO) {
+            println("MQTT 커넥트 !")
+            mullyuMQTT.connect()
+        }
+
+        //mullyuMQTT.connect()
         //mullyuHTTP.connect()
 
         setContent {
