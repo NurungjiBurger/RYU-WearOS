@@ -3,56 +3,60 @@ package com.example.mullyu.presentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.util.UUID
 
-class MullyuMQTT(callback: MqttCallback?) {
-    private val mqttClient: MqttClient
-    private val brokerUrl = "tcp://192.168.56.1:1883"//"tcp://broker.emqx.io:1883"//"tcp://broker.hivemq.com:1883"//"tcp://iot.eclipse.org:1883"//"tcp://test.mosquitto.org:1883"
-    private val clientId = UUID.randomUUID().toString() // UUID 사용
+class MullyuMQTT() {
+    private lateinit var mqttClient: MqttClient
+    private val MQTT_BROKER = "tcp://70.12.246.77:1883"//"tcp://192.168.170.193:1883"
+    private val MQTT_TOPIC = "KFC"
 
     init {
-        mqttClient = MqttClient(brokerUrl, clientId, null) // null을 전달
-        mqttClient.setCallback(callback)
+        mqttClient = MqttClient(MQTT_BROKER, MqttClient.generateClientId(), MemoryPersistence())
     }
 
-    fun connect() {
-        GlobalScope.launch(Dispatchers.IO) {
-            try {
-                val options = MqttConnectOptions().apply {
-                    isCleanSession = true
-                    connectionTimeout = 10  // 10초 타임아웃 설정
+    fun connectToMQTTBroker() {
+        try {
+            mqttClient.connect()
+            mqttClient.setCallback(object : MqttCallback {
+                override fun connectionLost(cause: Throwable?) {
+                    println("연결이 끊어졌습니다.")
                 }
-                options.isCleanSession = true
-                println("MQTT connect try")
-                mqttClient.connect(options)
-                println("MQTT connect success")
-                println("MQTT 연결 시도")
-                if (mqttClient.isConnected) {
-                    println("MQTT 연결 성공")
-                } else {
-                    println("MQTT 연결 실패")
+
+                override fun messageArrived(topic: String?, message: MqttMessage?) {
+                    // 메시지가 도착했을 때의 행동을 정의할 수 있습니다.
+                    message?.let {
+                        println("Received message: ${String(it.payload)}")
+                    }
+                    print("${topic} from MQTT message arrived : ${message.toString()}")
                 }
-            } catch (e: MqttException) {
-                println("MQTT 연결 실패: ${e.message}")
-                e.printStackTrace()
-            }
+
+                override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                    // 메시지 배달이 완료되었을 때의 행동을 정의할 수 있습니다.
+                    println("MQTT message to deleiver")
+                }
+            })
+            subscribe(MQTT_TOPIC)
+            println("Connected to MQTT Broker")
+        } catch (e: MqttException) {
+            println("Failed to connect to MQTT Broker: ${e.message}")
         }
     }
 
-    fun publish(topic: String?, message: String) {
+    fun sendMQTTMessage(msg: String) {
         try {
-            val mqttMessage = MqttMessage(message.toByteArray())
-            mqttMessage.qos = 1 // 또는 0으로 변경
-            mqttClient.publish(topic, mqttMessage)
-            println("MQTT 메시지 발행: $message")
+            val message = MqttMessage()
+            message.payload = msg.toByteArray()
+            mqttClient.publish(MQTT_TOPIC, message)
+            println("MQTT Message sent: $message")
         } catch (e: MqttException) {
-            println("MQTT 메시지 발행 실패")
-            e.printStackTrace()
+            println("MQTT Failed to send message: ${e.message}")
         }
     }
 

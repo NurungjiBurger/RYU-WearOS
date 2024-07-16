@@ -8,13 +8,13 @@ import kotlinx.coroutines.flow.asStateFlow
 class MullyuViewModel : ViewModel() {
 
     private val Datas = listOf(
-        Mullyu(R.drawable.galaxybook, "갤럭시북", "1", false),
-        Mullyu(R.drawable.galaxywatch, "갤럭시워치", "2", false),
-        Mullyu(R.drawable.galxys24, "갤럭시S24", "1", false),
-        Mullyu(R.drawable.dongwonchamchi, "동원참치", "10", false),
-        Mullyu(R.drawable.haribo, "하리보", "20", false),
-        Mullyu(R.drawable.chocolate, "초콜릿", "15", false),
-        Mullyu(R.drawable.galaxyring, "갤럭시링", "1", false)
+        Mullyu(R.drawable.galaxybook, "Galaxy Book", "1", false),
+        Mullyu(R.drawable.galaxywatch, "Galaxy Watch", "2", false),
+        Mullyu(R.drawable.galxys24, "Galaxy S24", "1", false),
+        Mullyu(R.drawable.dongwonchamchi, "Dongwon Chamchi", "10", false),
+        Mullyu(R.drawable.haribo, "Haribo", "20", false),
+        Mullyu(R.drawable.chocolate, "Gana Chocolate", "15", false),
+        Mullyu(R.drawable.galaxyring, "Galaxy Ring", "1", false)
     )
 
     private val _imageIndex = MutableStateFlow(0)
