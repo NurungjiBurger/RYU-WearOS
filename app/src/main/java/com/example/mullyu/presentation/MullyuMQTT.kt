@@ -12,7 +12,8 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.util.UUID
 
-class MullyuMQTT() {
+//                          callback 함수 설정
+class MullyuMQTT(private val messageListener: (String) -> Unit) {
     private lateinit var mqttClient: MqttClient
     private val MQTT_BROKER = "tcp://70.12.246.77:1883"//"tcp://192.168.170.193:1883"
     private val MQTT_TOPIC = "KFC"
@@ -33,6 +34,7 @@ class MullyuMQTT() {
                     // 메시지가 도착했을 때의 행동을 정의할 수 있습니다.
                     message?.let {
                         println("Received message: ${String(it.payload)}")
+                        messageListener(String(it.payload))
                     }
                 }
 
@@ -75,6 +77,16 @@ class MullyuMQTT() {
             println("MQTT 연결 종료")
         } catch (e: MqttException) {
             println("MQTT 연결 종료 실패")
+            e.printStackTrace()
+        }
+    }
+
+    fun unsubscribe(topic: String?) {
+        try{
+            mqttClient.unsubscribe(topic ?: "test/topic")
+            println("MQTT 구독 중지 : ${topic ?: "test/topic"}")
+        } catch (e: MqttException) {
+            println("MQTT 구독 중지 실패 : ${e.message}")
             e.printStackTrace()
         }
     }

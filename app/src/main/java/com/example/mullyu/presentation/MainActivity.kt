@@ -47,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
+import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
@@ -67,45 +69,35 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 
 class MainActivity : ComponentActivity() {
     //private lateinit var mullyuHTTP: MullyuHTTP
-
+    private val viewModel: MullyuViewModel by viewModels()
+    private lateinit var mullyuDataList: MullyuDataList
     //private lateinit var mullyuMQTT: MullyuMQTT
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         installSplashScreen()
         setTheme(android.R.style.Theme_DeviceDefault)
 
-//    mullyuHTTP = MullyuHTTP()
-//    mullyuHTTP.init() // Initialize if needed
-//    mullyuHTTP.connect() // Connect to WebSocket
+    //    mullyuHTTP = MullyuHTTP()
+    //    mullyuHTTP.init()
+    //    mullyuHTTP.connect()
 
-        //mullyuMQTT = MullyuMQTT()
+//        val mqttClient = MullyuMQTT { message ->
+//            test()
+//        }
 
-//        mullyuMQTT.connect(object : MqttCallback {
-//            override fun connectionLost(cause: Throwable?) {
-//                println("MQTT connect")
-//            }
-//
-//            override fun messageArrived(topic: String?, message: MqttMessage?) {
-//                // 메시지가 도착했을 때의 행동을 정의할 수 있습니다.
-//                println("MQTT message arrive")
-//            }
-//
-//            override fun deliveryComplete(token: IMqttDeliveryToken?) {
-//                // 메시지 배달이 완료되었을 때의 행동을 정의할 수 있습니다.
-//                println("MQTT message delivered")
-//            }
-//        })
-
-        //mullyuMQTT.connect()
         //mullyuHTTP.connect()
 
 
         //mullyuMQTT.connectToMQTTBroker()
 
+        mullyuDataList = MullyuDataList(viewModel, applicationContext)
+        mullyuDataList.connect()
+
         setContent {
-            val viewModel: MullyuViewModel by viewModels()
             val mullyuData by viewModel.mullyuData.collectAsStateWithLifecycle()
+            val dataList by viewModel.dataList.collectAsStateWithLifecycle()
 
             Scaffold(
                 timeText = {
@@ -120,8 +112,13 @@ class MainActivity : ComponentActivity() {
                     Vignette(vignettePosition = VignettePosition.TopAndBottom)
                 }
             ) {
+                if (mullyuData == null) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                }
+            } else {
                 Mullyu(
-                    data = mullyuData,
+                    data = mullyuData!!,
                     onConfirmClick = {
                         viewModel.nextImage()
                         // Optional: Send a message through WebSocket here if needed
@@ -133,8 +130,13 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(Color.Black)
                 )
+                }
             }
         }
+    }
+
+    private fun test() {
+        println("MQTT READY")
     }
 
     private fun sendMQTTMessage(message: String) {
@@ -229,6 +231,9 @@ private fun Mullyu(
                 onConfirmClick()
                 sendMQTTMessage(data.name)
             },
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color.Magenta, // 버튼 배경색
+            ),
             modifier = Modifier
                 .fillMaxWidth() // 고정된 버튼 너비
                 .height(48.dp) // 고정된 버튼 높이
