@@ -1,0 +1,7 @@
+"chocolate5,galaxybook1,haribo50,dongwonchamchi20"
+
+"galaxybook1,galaxyring5,galaxywatch2"
+
+"haribo/10,dongwonchamchi/15,galaxys24/1"
+
+"dongwonchamchi20,galaxyring10,chocolate1,galaxywatch2"
