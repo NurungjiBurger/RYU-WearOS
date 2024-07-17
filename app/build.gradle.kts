@@ -25,7 +25,7 @@ android {
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
-            )
+            )// 환경 변수 추가
         }
     }
     compileOptions {
@@ -46,6 +46,14 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    sourceSets {
+        getByName("main") {
+            java {
+                srcDir("src/main/resources")
+            }
+        }
+    }
+
 }
 
 dependencies {
@@ -71,4 +79,6 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.org.eclipse.paho.client.mqttv3)
     implementation(libs.org.eclipse.paho.android.service)
+    implementation(libs.cdimascio.dotenv.kotlin)
+    implementation(libs.dotenv.kotlin.v640)
 }

@@ -13,7 +13,7 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
     // private val datalist 동적 생성
     private val topic = "KFC"
 
-    private val mqttClient = MullyuMQTT { message ->
+    private val mqttClient = MullyuMQTT(context) { message ->
         handleMessage(message)
     }
 

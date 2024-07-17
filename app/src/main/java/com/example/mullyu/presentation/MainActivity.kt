@@ -114,7 +114,14 @@ class MainActivity : ComponentActivity() {
             ) {
                 if (mullyuData == null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                        Text(
+                            text = "No Data",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.width(100.dp) // 고정된 텍스트 너비
+                        )
                 }
             } else {
                 Mullyu(

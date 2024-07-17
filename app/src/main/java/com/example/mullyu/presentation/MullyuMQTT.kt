@@ -1,5 +1,10 @@
 package com.example.mullyu.presentation
 
+import android.annotation.SuppressLint
+import android.content.ContentValues.TAG
+import android.content.Context
+import android.util.Log
+import io.github.cdimascio.dotenv.Dotenv
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -11,15 +16,34 @@ import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import java.util.UUID
+import io.github.cdimascio.dotenv.dotenv
+import java.io.File
+
 
 //                          callback 함수 설정
-class MullyuMQTT(private val messageListener: (String) -> Unit) {
+class MullyuMQTT(private val context: Context, private val messageListener: (String) -> Unit) {
     private lateinit var mqttClient: MqttClient
-    private val MQTT_BROKER = "tcp://70.12.246.77:1883"//"tcp://192.168.170.193:1883"
     private val MQTT_TOPIC = "KFC"
 
+    // dotenv 파일 불러오기
     init {
-        mqttClient = MqttClient(MQTT_BROKER, MqttClient.generateClientId(), MemoryPersistence())
+        try {
+            val dotenv = dotenv {
+                // 앱 내부
+                // 여기서는 /data/user/0/com.example.mullyu/files/.env
+                directory = context.filesDir.absolutePath
+                filename = ".env"
+            }
+            Log.d("Dotenv", "Loaded MQTT_BROKER_IP: ${dotenv["MQTT_BROKER_IP"]}")
+            // 찾았으면 할당
+            val MQTT_BROKER_ID = dotenv["MQTT_BROKER_IP"]
+            
+            // 해당 IP로 연결
+            mqttClient = MqttClient(MQTT_BROKER_ID, MqttClient.generateClientId(), MemoryPersistence())
+
+        } catch (e: Exception) {
+            Log.e("Dotenv", "Error loading .env file: ${e.message}")
+        }
     }
 
     fun connectToMQTTBroker() {
