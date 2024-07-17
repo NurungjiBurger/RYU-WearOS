@@ -1,5 +1,8 @@
 [versions]
 agp = "8.5.0"
+dotenvKotlin = "6.4.1"
+dotenvKotlinVersion = "6.4.1"
+githubDotenvKotlin = "6.4.0"
 kotlin = "1.9.0"
 orgEclipsePahoAndroidService = "1.1.1"
 orgEclipsePahoClientMqttv3 = "1.2.5"
@@ -19,6 +22,9 @@ okhttp = "4.9.3"
 appcompat = "1.7.0"
 
 [libraries]
+cdimascio-dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlinVersion" }
+dotenv-kotlin = { module = "com.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlin" }
+dotenv-kotlin-v640 = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "githubDotenvKotlin" }
 org-eclipse-paho-android-service = { module = "org.eclipse.paho:org.eclipse.paho.android.service", version.ref = "orgEclipsePahoAndroidService" }
 org-eclipse-paho-client-mqttv3 = { module = "org.eclipse.paho:org.eclipse.paho.client.mqttv3", version.ref = "orgEclipsePahoClientMqttv3" }
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
