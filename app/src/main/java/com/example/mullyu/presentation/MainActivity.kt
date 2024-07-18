@@ -6,9 +6,8 @@
 
 package com.example.mullyu.presentation
 
-import MullyuViewModel
+import com.example.mullyu.presentation.data.MullyuViewModel
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,50 +27,37 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Devices
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.TimeTextDefaults
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.placeholder
 import com.example.mullyu.R
-import com.example.mullyu.presentation.theme.MullyuTheme
-import com.example.mullyu.presentation.MullyuMQTT
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
-import org.eclipse.paho.client.mqttv3.MqttCallback
-import org.eclipse.paho.client.mqttv3.MqttMessage
+import com.example.mullyu.presentation.data.Mullyu
+import com.example.mullyu.presentation.data.MullyuDataList
 
 class MainActivity : ComponentActivity() {
-    //private lateinit var mullyuHTTP: MullyuHTTP
+    // HTTP, MQTT 사용을 위한 선언
+    // private lateinit var mullyuHTTP: MullyuHTTP
+    // private lateinit var mullyuMQTT: MullyuMQTT
+
+    // 내부 처리 로직 관리 모델 선언
     private val viewModel: MullyuViewModel by viewModels()
+    // 동적 리스트를 생성하고 관리할 객체 선언
     private lateinit var mullyuDataList: MullyuDataList
-    //private lateinit var mullyuMQTT: MullyuMQTT
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,25 +65,21 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         setTheme(android.R.style.Theme_DeviceDefault)
 
-    //    mullyuHTTP = MullyuHTTP()
-    //    mullyuHTTP.init()
-    //    mullyuHTTP.connect()
+        // HTTP, MQTT 사용 초기화 및 연결
+        // mullyuHTTP = MullyuHTTP()
+        // mullyuHTTP.init()
+        // mullyuHTTP.connect()
 
-//        val mqttClient = MullyuMQTT { message ->
-//            test()
-//        }
+        // mullyuMQTT.connectToMQTTBroker()
 
-        //mullyuHTTP.connect()
-
-
-        //mullyuMQTT.connectToMQTTBroker()
-
+        // 동적 데이터 리스트를 관리하고 생성할 객체 초기화
         mullyuDataList = MullyuDataList(viewModel, applicationContext)
+        // 동적으로 생성하기 위해 MQTT 연결
         mullyuDataList.connect()
 
         setContent {
+            // 현재 화면상에 보여주어야하는 데이터
             val mullyuData by viewModel.mullyuData.collectAsStateWithLifecycle()
-            val dataList by viewModel.dataList.collectAsStateWithLifecycle()
 
             Scaffold(
                 timeText = {
@@ -113,6 +94,7 @@ class MainActivity : ComponentActivity() {
                     Vignette(vignettePosition = VignettePosition.TopAndBottom)
                 }
             ) {
+                // 메시지를 수신하지 못해서 보여줄 물류 데이터가 없다면 대기화면 출력
                 if (mullyuData == null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
@@ -121,19 +103,17 @@ class MainActivity : ComponentActivity() {
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.width(100.dp) // 고정된 텍스트 너비
+                            modifier = Modifier.width(100.dp)
                         )
                 }
-            } else {
+            }
+                // 메시지 수신 시 데이터를 화면에 UI와 함께 보여줄 것
+                else {
                 Mullyu(
                     data = mullyuData!!,
                     onConfirmClick = {
                         viewModel.ConfirmMullyuData()
-                        mullyuDataList.DataProcessCheck()
-                        // Optional: Send a message through WebSocket here if needed
-                    },
-                    sendMQTTMessage = { message ->
-                        sendMQTTMessage(message)
+                        mullyuDataList.dataProcessCheck()
                     },
                     modifier = Modifier
                         .fillMaxSize()
@@ -143,32 +123,15 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    private fun test() {
-        println("MQTT READY")
-    }
-
-    private fun sendMQTTMessage(message: String) {
-        //mullyuMQTT.sendMQTTMessage(message)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        //mullyuHTTP.disconnect()
-        //mullyuMQTT.disconnect()
-    }
-
-
 }
 
 @Composable
 private fun Mullyu(
     data: Mullyu,
     onConfirmClick: () -> Unit,
-    sendMQTTMessage: (message: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-
+    // UI 세로 배치
     Column(
         modifier = modifier
             .padding(16.dp)
@@ -176,24 +139,28 @@ private fun Mullyu(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // UI 윗부분 이미지와 글 가로 배치
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.width(16.dp)) // 왼쪽에 간격 추가
+            // 간격
+            Spacer(modifier = Modifier.width(16.dp))
 
+            // 이미지 삽입 구간
             Box {
                 Image(
                     painter = painterResource(id = data.imageName),
                     contentDescription = null,
                     modifier = Modifier
                         .size(64.dp)
-                        .let { if (data.process) it.graphicsLayer { alpha = 0.3f } else it }
+                        .let { if (data.isProcess) it.graphicsLayer { alpha = 0.3f } else it }
                 )
-                if (data.process) {
+                // 이미 처리된 이미지라면 체크표시 이미지를 덮어 씌움
+                if (data.isProcess) {
                     Image(
-                        painter = painterResource(id = R.drawable.check), // 체크 표시 이미지
+                        painter = painterResource(id = R.drawable.check),
                         contentDescription = null,
                         modifier = Modifier
                             .size(32.dp)
@@ -203,7 +170,7 @@ private fun Mullyu(
             }
 
             Spacer(modifier = Modifier.width(16.dp))
-
+            // 구분선
             Box(
                 modifier = Modifier
                     .width(1.dp)
@@ -222,7 +189,8 @@ private fun Mullyu(
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     textAlign = TextAlign.Start,
-                    modifier = Modifier.width(100.dp) // 고정된 텍스트 너비
+                    // 텍스트가 들어갈 너비를 고정하여 글자수가 달라지더라도 UI가 움직이지 않게 함
+                    modifier = Modifier.width(100.dp)
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -232,7 +200,7 @@ private fun Mullyu(
                     fontSize = 16.sp,
                     color = Color.White,
                     textAlign = TextAlign.Start,
-                    modifier = Modifier.width(100.dp) // 고정된 텍스트 너비
+                    modifier = Modifier.width(100.dp)
                 )
             }
         }
@@ -251,14 +219,14 @@ private fun Mullyu(
         Button(
             onClick = {
                 onConfirmClick()
-                sendMQTTMessage(data.name)
             },
             colors = ButtonDefaults.buttonColors(
-                backgroundColor = Color.Magenta, // 버튼 배경색
+                // 차후 로봇의 구분을 위해 버튼에 색깔을 넣을 수 있음
+                backgroundColor = Color.Magenta,
             ),
             modifier = Modifier
-                .fillMaxWidth() // 고정된 버튼 너비
-                .height(48.dp) // 고정된 버튼 높이
+                .fillMaxWidth()
+                .height(48.dp)
         ) {
             Text(text = "Confirm", color = Color.White)
         }
