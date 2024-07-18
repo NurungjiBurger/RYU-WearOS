@@ -2,16 +2,16 @@ package com.example.mullyu.presentation
 
 import MullyuViewModel
 import android.content.Context
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import com.example.mullyu.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class MullyuDataList(private val viewModel: MullyuViewModel, private val context: Context) {
-    // mqtt or http 로 통신 후
-    // private val datalist 동적 생성
-    private val topic = "KFC"
+    // MQTT 또는 HTTP로 통신 후 데이터 목록 동적 생성
+    private val Topic = "KFC"
+    private val _ProcessCnt = MutableStateFlow(0)
+
+    val ProcessCnt: StateFlow<Int> = _ProcessCnt.asStateFlow()
 
     private val mqttClient = MullyuMQTT(context) { message ->
         handleMessage(message)
@@ -19,17 +19,33 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
 
     fun connect() {
         mqttClient.connectToMQTTBroker()
+        mqttClient.subscribe(Topic)
     }
 
     fun disconnect() {
         mqttClient.disconnect()
     }
 
+    fun DataProcessCheck() {
+        if (viewModel.DataProcessCheck()) {
+            ReSubscribeTopic()
+        }
+    }
+
+    private fun ReSubscribeTopic() {
+        mqttClient.unsubscribe(Topic)
+        mqttClient.subscribe(Topic)
+    }
+
     private fun handleMessage(message: String) {
-        mqttClient.unsubscribe(topic)
+        // 데이터 처리 중에 구독 해제
+        mqttClient.unsubscribe(Topic)
 
         val newItems = parseMessageToMullyuList(message)
         viewModel.updateDataList(newItems)
+
+        // 데이터 처리 완료 후 구독 다시 설정
+        mqttClient.subscribe(Topic)
     }
 
     private fun parseMessageToMullyuList(message: String): List<Mullyu> {
@@ -47,5 +63,4 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
     private fun getDrawableResIdByName(name: String): Int {
         return context.resources.getIdentifier(name.lowercase(), "drawable", context.packageName)
     }
-
 }

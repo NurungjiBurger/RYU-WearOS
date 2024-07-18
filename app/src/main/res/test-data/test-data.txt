@@ -1,6 +1,6 @@
-"chocolate5,galaxybook1,haribo50,dongwonchamchi20"
+"chocolate/5,galaxybook/1,haribo/50,dongwonchamchi/20"
 
-"galaxybook1,galaxyring5,galaxywatch2"
+"galaxybook/1,galaxyring/5,galaxywatch/2"
 
 "haribo/10,dongwonchamchi/15,galaxys24/1"
 

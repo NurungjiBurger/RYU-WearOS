@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -127,7 +128,8 @@ class MainActivity : ComponentActivity() {
                 Mullyu(
                     data = mullyuData!!,
                     onConfirmClick = {
-                        viewModel.nextImage()
+                        viewModel.ConfirmMullyuData()
+                        mullyuDataList.DataProcessCheck()
                         // Optional: Send a message through WebSocket here if needed
                     },
                     sendMQTTMessage = { message ->
@@ -181,11 +183,24 @@ private fun Mullyu(
         ) {
             Spacer(modifier = Modifier.width(16.dp)) // 왼쪽에 간격 추가
 
-            Image(
-                painter = painterResource(id = data.imageName),
-                contentDescription = null,
-                modifier = Modifier.size(64.dp) // 고정된 이미지 크기
-            )
+            Box {
+                Image(
+                    painter = painterResource(id = data.imageName),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(64.dp)
+                        .let { if (data.process) it.graphicsLayer { alpha = 0.3f } else it }
+                )
+                if (data.process) {
+                    Image(
+                        painter = painterResource(id = R.drawable.check), // 체크 표시 이미지
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .align(Alignment.Center)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.width(16.dp))
 
