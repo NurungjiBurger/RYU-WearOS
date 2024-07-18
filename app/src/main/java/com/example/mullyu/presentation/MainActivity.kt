@@ -65,6 +65,8 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         setTheme(android.R.style.Theme_DeviceDefault)
 
+        viewModel.printAllData()
+
         // HTTP, MQTT 사용 초기화 및 연결
         // mullyuHTTP = MullyuHTTP()
         // mullyuHTTP.init()
@@ -80,6 +82,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             // 현재 화면상에 보여주어야하는 데이터
             val mullyuData by viewModel.mullyuData.collectAsStateWithLifecycle()
+            val nowProcessed by viewModel.ProcessCount.collectAsStateWithLifecycle()
+            val maxProcessed by viewModel.dataList.collectAsStateWithLifecycle()
 
             Scaffold(
                 timeText = {
@@ -105,12 +109,14 @@ class MainActivity : ComponentActivity() {
                             textAlign = TextAlign.Center,
                             modifier = Modifier.width(100.dp)
                         )
-                }
+                    }
             }
                 // 메시지 수신 시 데이터를 화면에 UI와 함께 보여줄 것
                 else {
                 Mullyu(
                     data = mullyuData!!,
+                    nowSize = nowProcessed,
+                    maxSize = maxProcessed.size,
                     onConfirmClick = {
                         viewModel.ConfirmMullyuData()
                         mullyuDataList.dataProcessCheck()
@@ -128,6 +134,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Mullyu(
     data: Mullyu,
+    nowSize: Int,
+    maxSize: Int,
     onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -222,13 +230,14 @@ private fun Mullyu(
             },
             colors = ButtonDefaults.buttonColors(
                 // 차후 로봇의 구분을 위해 버튼에 색깔을 넣을 수 있음
-                backgroundColor = Color.Magenta,
+                backgroundColor = Color.Cyan,
             ),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
         ) {
-            Text(text = "Confirm", color = Color.White)
+            if (data.isProcess) Text(text = "Next ${nowSize} / ${maxSize}", color = Color.White)
+            else Text(text = "Confirm ${nowSize} / ${maxSize}", color = Color.White)
         }
     }
 }
