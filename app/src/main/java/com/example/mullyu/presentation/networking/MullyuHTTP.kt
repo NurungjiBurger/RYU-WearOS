@@ -1,4 +1,4 @@
-package com.example.mullyu.presentation
+package com.example.mullyu.presentation.networking
 
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -8,6 +8,7 @@ import okio.ByteString
 import android.util.Log
 import okio.ByteString.Companion.decodeHex
 
+// HTTP
 class MullyuHTTP {
     private val client: OkHttpClient = OkHttpClient()
     private lateinit var webSocket: WebSocket
@@ -16,18 +17,21 @@ class MullyuHTTP {
         // 초기화 작업 수행
     }
 
+    // 연결
     fun connect() {
         val request = Request.Builder().url("wss://echo.websocket.org").build()
         val listener = EchoWebSocketListener()
         webSocket = client.newWebSocket(request, listener)
     }
 
+    // 연결 해제
     fun disconnect() {
         if (::webSocket.isInitialized) {
             webSocket.close(1000, "Client closed connection")
         }
     }
 
+    // 동작테스트
     private inner class EchoWebSocketListener : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: okhttp3.Response) {
             Log.d("WebSocket", "Connected to the server")
