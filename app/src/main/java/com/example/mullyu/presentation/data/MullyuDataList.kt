@@ -1,10 +1,12 @@
 package com.example.mullyu.presentation.data
 
 import android.content.Context
+import androidx.lifecycle.viewModelScope
 import com.example.mullyu.presentation.networking.MullyuMQTT
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 // MQTT로 통신 후 데이터 목록 동적 생성
 class MullyuDataList(private val viewModel: MullyuViewModel, private val context: Context) {
@@ -23,6 +25,7 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
     fun connect() {
         mqttClient.connectToMQTTBroker()
         mqttClient.subscribe(mqttTopic)
+        initalizeDataList()
     }
 
     // MQTT 연결 해제
@@ -30,10 +33,37 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
         mqttClient.disconnect()
     }
 
+    // 앱이 처음 실행될 때 내부 DB를 보고 동적으로 리스트 생성
+    fun initalizeDataList() {
+        viewModel.viewModelScope.launch {
+            try {
+                // 데이터베이스에서 모든 데이터 가져오기
+                val allData = viewModel.getAllDataFromDatabase()
+
+                // 모든 데이터가 처리 완료되었는지 확인
+                if (allData.all { it.isProcess }) {
+                    // 모든 데이터가 처리 완료된 경우 다음 메시지를 기다려야함
+                    reSubscribeTopic()  // 구독 재설정
+                } else {
+                    // 모든 데이터가 처리되지 않은 경우
+                    // 모든 데이터로 다시 리스트를 생성해서 전달
+                    val newItems = allData
+
+                    // newItems를 viewModel에 전달하여 업데이트
+                    mqttClient.unSubscribe(mqttTopic)
+                    viewModel.updateDataList(newItems)
+                }
+            } catch (e: Exception) {
+            }
+        }
+    }
+
     // 모든 데이터가 처리됐는지 체크
     fun dataProcessCheck() {
-        // 모두 처리 됐다면 구독 재개
-        if (viewModel.dataProcessCheck()) reSubscribeTopic()
+        if (viewModel.dataProcessCheck()) {
+            reSubscribeTopic()
+            viewModel.updateDataList(emptyList())
+        }
     }
 
     // 구독 재개
@@ -50,16 +80,14 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
         // 새 아이템을 만들어주고
         val newItems = parseMessageToMullyuList(message)
         viewModel.updateDataList(newItems)
-
-        // 데이터 처리 완료 후 구독 다시 설정
-        mqttClient.subscribe(mqttTopic)
     }
 
     // 들어온 메시지로부터 Mullyu 데이터에 맞춰서 데이터 객체 생성
-    private fun parseMessageToMullyuList(message: String): List<Mullyu> {
+    // 물류 데이터 JSON 형태로 바꿔야 함
+    private fun parseMessageToMullyuList(message: String): List<MullyuLogistics> {
         return message.split(",").map { item ->
             val parts = item.split("/")
-            Mullyu(
+            MullyuLogistics(
                 imageName = getDrawableResIdByName(parts[0]),
                 name = parts[0],
                 quantity = parts[1],

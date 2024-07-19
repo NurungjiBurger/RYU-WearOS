@@ -12,54 +12,51 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // 내부 로직 체계
 class MullyuViewModel(application: Application) : AndroidViewModel(application) {
 
-    private var database: MullyuRoomDataBase? = null
+    // 내부 Database
+    private var database: MullyuRoomDataBase = Room.databaseBuilder(
+        application,
+        MullyuRoomDataBase::class.java, "mullyuDatabase"
+    ).build()
 
-    // 초기 데이터 삽입 예시
-    private val initialData = listOf(
-        MullyuLogistics(name = "Package A", quantity = 10, status = "Processed"),
-        MullyuLogistics(name = "Package B", quantity = 20, status = "Pending")
-    )
-
-    // 변경 가능한 val 변수 ?
+    // 변경 가능한 val 변수
     private val _imageIndex = MutableStateFlow(0)
-
     // 외부에서 참조하기 위한 변수들 변경 불가
     val imageIndex: StateFlow<Int> = _imageIndex.asStateFlow()
 
-    private val _dataList = MutableStateFlow<List<Mullyu>>(emptyList())
-    val dataList: StateFlow<List<Mullyu>> = _dataList.asStateFlow()
+    private val _dataList = MutableStateFlow<List<MullyuLogistics>>(emptyList())
+    val dataList: StateFlow<List<MullyuLogistics>> = _dataList.asStateFlow()
 
-    private val _mullyuData = MutableStateFlow<Mullyu?>(null)
-    val mullyuData: StateFlow<Mullyu?> = _mullyuData.asStateFlow()
+    private val _mullyuData = MutableStateFlow<MullyuLogistics?>(null)
+    val mullyuData: StateFlow<MullyuLogistics?> = _mullyuData.asStateFlow()
 
-    private val _ProcessCount = MutableStateFlow(0)
-    val ProcessCount: StateFlow<Int> = _ProcessCount.asStateFlow()
-
-    init {
-        println("DB 출력")
-        printAllData()
-    }
+    private val _processCount = MutableStateFlow(0)
+    val processCount: StateFlow<Int> = _processCount.asStateFlow()
+    
 
     // Confirm 버튼을 누르면 해당 물류에 대한 처리가 완료되었음을 의미
     fun ConfirmMullyuData() {
-        // 처리 완료 표시
-        if (!_mullyuData.value!!.isProcess) {
-            _mullyuData.value?.let { it.isProcess = true }
-            // 처리 완료 물량 + 1
-            _ProcessCount.value += 1
+        val currentData = _mullyuData.value ?: return
+        // 처리 완료 표시 및 DB 업데이트
+        if (!currentData.isProcess) {
+            viewModelScope.launch(Dispatchers.IO) {
+                currentData.isProcess = true
+                _processCount.value += 1
+                database.mullyuLogisticsDao().updateIsProcess(currentData.name)
+            }
         }
-        // 다음 물류 표시
+        //printAllData()
+        // 다음 물류
         displayNextMullyuData()
     }
 
     // 모든 물품에 대한 처리 검사
     fun dataProcessCheck(): Boolean {
-        if (_ProcessCount.value == _dataList.value.size) return true
-        return false
+        return _processCount.value == _dataList.value.size
     }
 
     // 다음 데이터를 보여줌
@@ -69,29 +66,52 @@ class MullyuViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     // 데이터리스트 업데이트
-    fun updateDataList(newDataList: List<Mullyu>) {
-        _dataList.value = newDataList
-        _ProcessCount.value = 0
-        // 화면에 보여질 mullyuData는 새로 들어온 데이터리스트의 첫번째 물류
-        if (newDataList.isNotEmpty()) {
-            _mullyuData.value = newDataList[0]
+    fun updateDataList(newDataList: List<MullyuLogistics>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // 기존 DB 삭제
+            database.mullyuLogisticsDao().delete()
+            val lastInsertedId = database.mullyuLogisticsDao().getLastInsertedId() ?: 0
+            // ID가 너무 커지는 것을 방지하기 위해 ID가 너무 커지지 않도록 한번씩 리셋
+            if (lastInsertedId >= 1000000) {
+                database.mullyuLogisticsDao().deleteAll()
+                database.clearAllTables()
+            }
+            // 데이터를 다 썼을 때는 다시 No Data 표시
+            if (newDataList.size == 0) {
+                _dataList.value = emptyList()
+                _mullyuData.value = null
+            }
+            else {
+                // 새로운 DB 삽입
+                database.mullyuLogisticsDao().insertAll(newDataList)
+                _dataList.value = newDataList
+                _mullyuData.value = newDataList.getOrNull(0)
+            }
+            // 처리 완료된 데이터의 수 표시
+            _processCount.value = _dataList.value.count { it.isProcess }
         }
     }
 
-    // 데이터베이스에서 데이터리스트를 가져옴
+    // 데이터베이스에서 모든 데이터를 가져오는 suspend 함수
+    suspend fun getAllDataFromDatabase(): List<MullyuLogistics> {
+        return withContext(Dispatchers.IO) {
+            try {
+                database.mullyuLogisticsDao().getAll()
+            } catch (e: Exception) {
+                println("데이터베이스 읽기 오류: ${e.message}")
+                emptyList()
+            }
+        }
+    }
+
+    // Database 상태로 받아오기
     private fun getDatabase(): MullyuRoomDataBase {
-        println("DB 생성 시작 ~~ ")
         return database ?: synchronized(this) {
             val instance = Room.databaseBuilder(
                 getApplication(),
                 MullyuRoomDataBase::class.java,
-                "testdb"
-            ).apply {
-                // 데이터베이스가 처음 생성될 때 초기 데이터를 삽입합니다.
-                if (database?.mullyuLogisticsDao()?.getAll().isNullOrEmpty()) {
-                    database?.mullyuLogisticsDao()?.insertAll(initialData)
-                }
-            }.build()
+                "mullyu-database"
+            ).build()
             database = instance
             instance
         }
@@ -104,15 +124,8 @@ class MullyuViewModel(application: Application) : AndroidViewModel(application) 
             val dataList = db.mullyuLogisticsDao().getAll()
             println("전체 데이터:")
             dataList.forEach {
-                println("물류이름: ${it.name}, 물류량: ${it.quantity}, 처리상태: ${it.status}")
+                println("번호: ${it.id}, 물류이름: ${it.name}, 물류량: ${it.quantity}, 처리상태: ${it.isProcess}")
             }
         }
-    }
-
-    // 데이터리스트 백업
-    fun dataListBackUp() {
-        println("DB 백업 ~ ")
-        database!!.mullyuLogisticsDao().deleteAll()
-        database!!.mullyuLogisticsDao().insertAll(initialData)
     }
 }

@@ -46,8 +46,8 @@ import androidx.wear.compose.material.TimeTextDefaults
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import com.example.mullyu.R
-import com.example.mullyu.presentation.data.Mullyu
 import com.example.mullyu.presentation.data.MullyuDataList
+import com.example.mullyu.presentation.data.MullyuLogistics
 
 class MainActivity : ComponentActivity() {
     // HTTP, MQTT 사용을 위한 선언
@@ -65,8 +65,6 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         setTheme(android.R.style.Theme_DeviceDefault)
 
-        viewModel.printAllData()
-
         // HTTP, MQTT 사용 초기화 및 연결
         // mullyuHTTP = MullyuHTTP()
         // mullyuHTTP.init()
@@ -82,7 +80,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             // 현재 화면상에 보여주어야하는 데이터
             val mullyuData by viewModel.mullyuData.collectAsStateWithLifecycle()
-            val nowProcessed by viewModel.ProcessCount.collectAsStateWithLifecycle()
+            val nowProcessed by viewModel.processCount.collectAsStateWithLifecycle()
             val maxProcessed by viewModel.dataList.collectAsStateWithLifecycle()
 
             Scaffold(
@@ -133,7 +131,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun Mullyu(
-    data: Mullyu,
+    data: MullyuLogistics,
     nowSize: Int,
     maxSize: Int,
     onConfirmClick: () -> Unit,
