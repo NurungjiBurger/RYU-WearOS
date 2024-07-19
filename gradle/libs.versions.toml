@@ -12,6 +12,7 @@ composeMaterial = "1.2.1"
 composeFoundation = "1.2.1"
 activityCompose = "1.7.2"
 coreSplashscreen = "1.0.1"
+roomRuntimeVersion = "2.6.1"
 tiles = "1.1.0"
 tilesMaterial = "1.1.0"
 horologistComposeTools = "0.4.8"
@@ -20,8 +21,11 @@ watchfaceComplicationsDataSourceKtx = "1.1.1"
 lifecycleRuntimeComposeAndroid = "2.8.3"
 okhttp = "4.9.3"
 appcompat = "1.7.0"
+roomCommon = "2.6.1"
 
 [libraries]
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntimeVersion" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntimeVersion" }
 cdimascio-dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlinVersion" }
 dotenv-kotlin = { module = "com.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlin" }
 dotenv-kotlin-v640 = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "githubDotenvKotlin" }
@@ -29,6 +33,9 @@ org-eclipse-paho-android-service = { module = "org.eclipse.paho:org.eclipse.paho
 org-eclipse-paho-client-mqttv3 = { module = "org.eclipse.paho:org.eclipse.paho.client.mqttv3", version.ref = "orgEclipsePahoClientMqttv3" }
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+room-compiler = { module = "androidx.room:room-compiler" }
+room-ktx = { module = "androidx.room:room-ktx" }
+room-runtime = { module = "androidx.room:room-runtime" }
 ui = { group = "androidx.compose.ui", name = "ui" }
 ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
@@ -46,6 +53,7 @@ watchface-complications-data-source-ktx = { group = "androidx.wear.watchface", n
 lifecycle-runtime-compose-android = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose-android", version.ref = "lifecycleRuntimeComposeAndroid" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+room-common = { group = "androidx.room", name = "room-common", version.ref = "roomCommon" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

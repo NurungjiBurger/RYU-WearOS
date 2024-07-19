@@ -1,8 +1,8 @@
-package com.example.mullyu.presentation
+package com.example.mullyu.presentation.data
 
 data class Mullyu(
     val imageName: Int,
     val name: String,
     val quantity: String,
-    val process: Boolean
+    var isProcess: Boolean
 )
