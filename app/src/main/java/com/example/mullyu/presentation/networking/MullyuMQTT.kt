@@ -32,8 +32,8 @@ class MullyuMQTT(private val sectorName: String, private val context: Context, p
             val mqttBrokerIp = dotenv["MQTT_BROKER_IP"]
             
             // 해당 IP로 연결
-            mqttClient = MqttClient(mqttBrokerIp, MqttClient.generateClientId(), MemoryPersistence())
-            //mqttClient = MqttClient("tcp://70.12.246.77:1883", MqttClient.generateClientId(), MemoryPersistence())
+            //mqttClient = MqttClient(mqttBrokerIp, MqttClient.generateClientId(), MemoryPersistence())
+            mqttClient = MqttClient("tcp://70.12.246.77:1883", MqttClient.generateClientId(), MemoryPersistence())
 
         } catch (e: Exception) {
             Log.e("Dotenv", "Error loading .env file: ${e.message}")

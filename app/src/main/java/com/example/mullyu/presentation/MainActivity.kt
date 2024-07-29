@@ -107,21 +107,9 @@ class MainActivity : ComponentActivity() {
             ) {
                 // 메시지를 수신하지 못해서 보여줄 물류 데이터가 없다면 대기화면 출력
                 if (mullyuData == null) {
-
-                    if (sectorName != null) {
-                        Text(
-                            text = "Sector: $sectorName",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
-
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            text = "No Data",
+                            text = "${sectorName} : No Data",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
