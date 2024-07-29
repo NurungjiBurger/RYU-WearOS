@@ -12,16 +12,17 @@ import kotlinx.coroutines.launch
 class MullyuDataList(private val viewModel: MullyuViewModel, private val context: Context, private val sectorName: String) {
     // 주제
     private val mqttTopic = normalizeSectorName(sectorName)
+    private var robotTopic: String? = null
     // 처리된 데이터의 수
     private val _processedCnt = MutableStateFlow(0)
     val processedCnt: StateFlow<Int> = _processedCnt.asStateFlow()
 
     private fun normalizeSectorName(name: String): String {
         // 섹터 이름이 "Sector"로 시작하지 않는 경우 앞에 "Sector" 추가
-        return if (name.startsWith("Sector")) {
+        return if (name.startsWith("sector")) {
             name
         } else {
-            "Sector$name"
+            "sector/$name"
         }
     }
 
@@ -58,6 +59,10 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
                     // 모든 데이터로 다시 리스트를 생성해서 전달
                     val newItems = allData
 
+                    robotTopic = viewModel.getRobotIdFromDatabase()
+
+                    println("robot ID : ${robotTopic}")
+
                     // newItems를 viewModel에 전달하여 업데이트
                     mqttClient.unSubscribe(mqttTopic)
                     viewModel.updateDataList(newItems)
@@ -73,7 +78,7 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
             reSubscribeTopic()
             viewModel.updateDataList(emptyList())
             // 처리가 다 되었으므로 완료 메시지 전송
-            mqttClient.sendMQTTMessage("complete")
+            mqttClient.sendMQTTMessage(robotTopic!!,"complete")
         }
     }
 
@@ -85,28 +90,32 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
 
     // 메시지가 들어왔을때 실행될 함수
     private fun handleMessage(message: String) {
-        // complete 메시지를 보낼 때 본인 또한 해당 주제를 구독해서 subscribe 하고 있기 때문에 해당메시지는 무시 그렇지 않으면 구독을 해제해버리게됨
-        if (message == "complete" || message == "accept") return
-        // 메시지를 받았다는 것을 보내줌
-        mqttClient.sendMQTTMessage("accept")
         // 데이터 처리 중에 구독 해제
         mqttClient.unSubscribe(mqttTopic)
 
         // 새 아이템을 만들어주고
         val newItems = parseMessageToMullyuList(message)
         viewModel.updateDataList(newItems)
+
+        // 메시지를 받았다는 것을 보내줌
+        mqttClient.sendMQTTMessage(robotTopic!!,"accept")
     }
 
     // 들어온 메시지로부터 Mullyu 데이터에 맞춰서 데이터 객체 생성
     // 물류 데이터 JSON 형태로 바꿔야 함
     private fun parseMessageToMullyuList(message: String): List<MullyuLogistics> {
-        return message.split(",").map { item ->
-            val parts = item.split("/")
+        val parts = message.split(",")
+        val robotId = parts[0] // 첫 번째 부분이 robot_id라고 가정
+        robotTopic = robotId
+
+        return parts.drop(1).map { item -> // 첫 번째 요소는 robot_id이므로 제외하고 나머지를 처리
+            val itemParts = item.split("/")
             MullyuLogistics(
-                imageName = getDrawableResIdByName(parts[0]),
-                name = parts[0],
-                quantity = parts[1],
-                isProcess = false
+                imageName = getDrawableResIdByName(itemParts[0]),
+                name = itemParts[0],
+                quantity = itemParts[1],
+                isProcess = false,
+                robotId = robotId // 추가된 robotId 필드에 값 설정
             )
         }
     }

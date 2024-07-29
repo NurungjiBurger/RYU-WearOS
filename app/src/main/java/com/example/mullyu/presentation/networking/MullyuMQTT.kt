@@ -33,7 +33,7 @@ class MullyuMQTT(private val sectorName: String, private val context: Context, p
             
             // 해당 IP로 연결
             //mqttClient = MqttClient(mqttBrokerIp, MqttClient.generateClientId(), MemoryPersistence())
-             mqttClient = MqttClient("tcp://70.12.246.77:1883", MqttClient.generateClientId(), MemoryPersistence())
+            mqttClient = MqttClient("tcp://70.12.246.77:1883", MqttClient.generateClientId(), MemoryPersistence())
 
         } catch (e: Exception) {
             Log.e("Dotenv", "Error loading .env file: ${e.message}")
@@ -77,13 +77,13 @@ class MullyuMQTT(private val sectorName: String, private val context: Context, p
     }
 
     // MQTT 메시지 보내기
-    fun sendMQTTMessage(msg: String) {
+    fun sendMQTTMessage(topic: String, msg: String) {
         try {
             // 전달받은 문자열을 MqttMessage로 변환
             val message = MqttMessage()
             message.payload = msg.toByteArray()
             // 특정 주제에게 메시지 publish
-            mqttClient.publish(mqttTopic, message)
+            mqttClient.publish(topic, message)
             println("MQTT Message sent: $message")
         } catch (e: MqttException) {
             println("MQTT Failed to send message: ${e.message}")

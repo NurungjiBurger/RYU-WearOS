@@ -138,4 +138,9 @@ class MullyuViewModel(application: Application) : AndroidViewModel(application) 
             _sectorName.value = name
         }
     }
+
+    // 단일 robotId 가져오는 메서드 추가
+    suspend fun getRobotIdFromDatabase(): String {
+        return database.mullyuLogisticsDao().getRobotId()
+    }
 }

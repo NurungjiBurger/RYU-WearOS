@@ -14,5 +14,7 @@ data class MullyuLogistics(
     // 수량
     val quantity: String,
     // 처리 상태
-    var isProcess: Boolean
+    var isProcess: Boolean,
+    // 로봇 ID
+    val robotId: String
 )

@@ -32,4 +32,8 @@ interface MullyuLogisticsDao {
     // 마지막 ID 검색
     @Query("SELECT MAX(id) FROM MullyuLogistics")
     suspend fun getLastInsertedId(): Int?
+
+    // 단일 robotId 가져오는 메서드 추가
+    @Query("SELECT robotId FROM MullyuLogistics LIMIT 1")
+    suspend fun getRobotId(): String
 }
