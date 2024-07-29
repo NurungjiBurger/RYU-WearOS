@@ -36,6 +36,10 @@ class MullyuViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _processCount = MutableStateFlow(0)
     val processCount: StateFlow<Int> = _processCount.asStateFlow()
+
+
+    private val _sectorName = MutableStateFlow<String?>("")
+    val sectorName: StateFlow<String?> = _sectorName.asStateFlow()
     
 
     // Confirm 버튼을 누르면 해당 물류에 대한 처리가 완료되었음을 의미
@@ -126,6 +130,12 @@ class MullyuViewModel(application: Application) : AndroidViewModel(application) 
             dataList.forEach {
                 println("번호: ${it.id}, 물류이름: ${it.name}, 물류량: ${it.quantity}, 처리상태: ${it.isProcess}")
             }
+        }
+    }
+
+    fun setSectorName(name: String) {
+        viewModelScope.launch {
+            _sectorName.value = name
         }
     }
 }

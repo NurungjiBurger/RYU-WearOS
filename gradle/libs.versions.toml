@@ -1,9 +1,11 @@
 [versions]
 agp = "8.5.0"
+coreKtx = "1.13.1"
 dotenvKotlin = "6.4.1"
 dotenvKotlinVersion = "6.4.1"
 githubDotenvKotlin = "6.4.0"
 kotlin = "1.9.0"
+lifecycleRuntimeKtx = "2.8.4"
 orgEclipsePahoAndroidService = "1.1.1"
 orgEclipsePahoClientMqttv3 = "1.2.5"
 playServicesWearable = "18.2.0"
@@ -24,6 +26,8 @@ appcompat = "1.7.0"
 roomCommon = "2.6.1"
 
 [libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntimeVersion" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntimeVersion" }
 cdimascio-dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlinVersion" }

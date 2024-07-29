@@ -9,15 +9,24 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 // MQTT로 통신 후 데이터 목록 동적 생성
-class MullyuDataList(private val viewModel: MullyuViewModel, private val context: Context) {
+class MullyuDataList(private val viewModel: MullyuViewModel, private val context: Context, private val sectorName: String) {
     // 주제
-    private val mqttTopic = "KFC"
+    private val mqttTopic = normalizeSectorName(sectorName)
     // 처리된 데이터의 수
     private val _processedCnt = MutableStateFlow(0)
     val processedCnt: StateFlow<Int> = _processedCnt.asStateFlow()
 
+    private fun normalizeSectorName(name: String): String {
+        // 섹터 이름이 "Sector"로 시작하지 않는 경우 앞에 "Sector" 추가
+        return if (name.startsWith("Sector")) {
+            name
+        } else {
+            "Sector$name"
+        }
+    }
+
     // 콜백함수로 handleMessage 등록하면서 MQTT 초기화
-    private val mqttClient = MullyuMQTT(context) { message ->
+    private val mqttClient = MullyuMQTT(mqttTopic, context) { message ->
         handleMessage(message)
     }
 
@@ -63,17 +72,22 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
         if (viewModel.dataProcessCheck()) {
             reSubscribeTopic()
             viewModel.updateDataList(emptyList())
+            // 처리가 다 되었으므로 완료 메시지 전송
+            mqttClient.sendMQTTMessage("complete")
         }
     }
 
     // 구독 재개
     private fun reSubscribeTopic() {
-        mqttClient.unSubscribe(mqttTopic)
+        //mqttClient.unSubscribe(mqttTopic)
         mqttClient.subscribe(mqttTopic)
     }
 
     // 메시지가 들어왔을때 실행될 함수
     private fun handleMessage(message: String) {
+        // complete 메시지를 보낼 때 본인 또한 해당 주제를 구독해서 subscribe 하고 있기 때문에 해당메시지는 무시 그렇지 않으면 구독을 해제해버리게됨
+        if (message == "complete") return
+
         // 데이터 처리 중에 구독 해제
         mqttClient.unSubscribe(mqttTopic)
 

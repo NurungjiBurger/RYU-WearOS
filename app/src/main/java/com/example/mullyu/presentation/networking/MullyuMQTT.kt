@@ -12,11 +12,11 @@ import io.github.cdimascio.dotenv.dotenv
 
 
 // MQTT
-class MullyuMQTT(private val context: Context, private val messageListener: (String) -> Unit) {
+class MullyuMQTT(private val sectorName: String, private val context: Context, private val messageListener: (String) -> Unit) {
     // MQTT를 위한 클라이언트 객체 생성
     private lateinit var mqttClient: MqttClient
     // 사용할 주제 ( 넘겨받은 것으로 해도됨 )
-    private val mqttTopic = "KFC"
+    private val mqttTopic = sectorName
 
     // dotenv 파일에서 브로커의 주소를 찾아서 초기화 진행
     init {
@@ -43,7 +43,10 @@ class MullyuMQTT(private val context: Context, private val messageListener: (Str
     // MQTT 브로커에 연결하기
     fun connectToMQTTBroker() {
         try {
-            // 연결 설정
+            // 이름 설정 전에 연결되는거 방지
+            if (mqttTopic == "Sector") return
+            println("this topic : ${mqttTopic}")
+            // 연결 설정A
             mqttClient.connect()
             // 콜백 함수 설정
             mqttClient.setCallback(object : MqttCallback {

@@ -6,8 +6,11 @@
 
 package com.example.mullyu.presentation
 
+import android.app.AlertDialog
 import com.example.mullyu.presentation.data.MullyuViewModel
 import android.os.Bundle
+import android.text.InputType
+import android.widget.EditText
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -72,16 +75,22 @@ class MainActivity : ComponentActivity() {
 
         // mullyuMQTT.connectToMQTTBroker()
 
-        // 동적 데이터 리스트를 관리하고 생성할 객체 초기화
-        mullyuDataList = MullyuDataList(viewModel, applicationContext)
-        // 동적으로 생성하기 위해 MQTT 연결
-        mullyuDataList.connect()
+        showSectorInputDialog()
 
         setContent {
             // 현재 화면상에 보여주어야하는 데이터
             val mullyuData by viewModel.mullyuData.collectAsStateWithLifecycle()
             val nowProcessed by viewModel.processCount.collectAsStateWithLifecycle()
             val maxProcessed by viewModel.dataList.collectAsStateWithLifecycle()
+            val sectorName by viewModel.sectorName.collectAsStateWithLifecycle()
+
+            if (sectorName != null)
+            {
+                // 동적 데이터 리스트를 관리하고 생성할 객체 초기화
+                mullyuDataList = MullyuDataList(viewModel, applicationContext, sectorName.toString())
+                // 동적으로 생성하기 위해 MQTT 연결
+                mullyuDataList.connect()
+            }
 
             Scaffold(
                 timeText = {
@@ -98,6 +107,18 @@ class MainActivity : ComponentActivity() {
             ) {
                 // 메시지를 수신하지 못해서 보여줄 물류 데이터가 없다면 대기화면 출력
                 if (mullyuData == null) {
+
+                    if (sectorName != null) {
+                        Text(
+                            text = "Sector: $sectorName",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = "No Data",
@@ -119,6 +140,7 @@ class MainActivity : ComponentActivity() {
                         viewModel.ConfirmMullyuData()
                         mullyuDataList.dataProcessCheck()
                     },
+                    sectorName = sectorName,
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.Black)
@@ -126,6 +148,27 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+    }
+
+    private fun showSectorInputDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("섹터 이름 입력")
+
+        val input = EditText(this)
+        input.inputType = InputType.TYPE_CLASS_TEXT
+        builder.setView(input)
+
+        builder.setPositiveButton("확인") { dialog, _ ->
+            viewModel.setSectorName(input.text.toString())
+            dialog.dismiss()
+        }
+
+        builder.setNegativeButton("취소") { dialog, _ ->
+            dialog.cancel()
+        }
+
+        builder.show()
     }
 }
 
@@ -135,9 +178,9 @@ private fun Mullyu(
     nowSize: Int,
     maxSize: Int,
     onConfirmClick: () -> Unit,
+    sectorName: String?, // 섹터 이름 전달받음
     modifier: Modifier = Modifier
 ) {
-    // UI 세로 배치
     Column(
         modifier = modifier
             .padding(16.dp)
@@ -145,16 +188,24 @@ private fun Mullyu(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // UI 윗부분 이미지와 글 가로 배치
+        if (sectorName != null) {
+            Text(
+                text = "Sector: $sectorName",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            // 간격
             Spacer(modifier = Modifier.width(16.dp))
 
-            // 이미지 삽입 구간
             Box {
                 Image(
                     painter = painterResource(id = data.imageName),
@@ -163,7 +214,6 @@ private fun Mullyu(
                         .size(64.dp)
                         .let { if (data.isProcess) it.graphicsLayer { alpha = 0.3f } else it }
                 )
-                // 이미 처리된 이미지라면 체크표시 이미지를 덮어 씌움
                 if (data.isProcess) {
                     Image(
                         painter = painterResource(id = R.drawable.check),
@@ -176,7 +226,7 @@ private fun Mullyu(
             }
 
             Spacer(modifier = Modifier.width(16.dp))
-            // 구분선
+
             Box(
                 modifier = Modifier
                     .width(1.dp)
@@ -195,7 +245,6 @@ private fun Mullyu(
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     textAlign = TextAlign.Start,
-                    // 텍스트가 들어갈 너비를 고정하여 글자수가 달라지더라도 UI가 움직이지 않게 함
                     modifier = Modifier.width(100.dp)
                 )
 
@@ -227,7 +276,6 @@ private fun Mullyu(
                 onConfirmClick()
             },
             colors = ButtonDefaults.buttonColors(
-                // 차후 로봇의 구분을 위해 버튼에 색깔을 넣을 수 있음
                 backgroundColor = Color.Cyan,
             ),
             modifier = Modifier
