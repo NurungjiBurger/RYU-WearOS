@@ -18,12 +18,13 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
     val processedCnt: StateFlow<Int> = _processedCnt.asStateFlow()
 
     private fun normalizeSectorName(name: String): String {
-        // 섹터 이름이 "Sector"로 시작하지 않는 경우 앞에 "Sector" 추가
-        return if (name.startsWith("sector")) {
-            name
-        } else {
-            "sector/$name"
-        }
+        // mqtt topic 정규화 시켜주기 sector/sector_id
+        return "sector/$name"
+    }
+
+    private fun normalizeRobotName(name: String): String {
+        // mqtt topic 정규화 시켜주기 robot/robot_id/status
+        return "robot/$name/status"
     }
 
     // 콜백함수로 handleMessage 등록하면서 MQTT 초기화
@@ -105,8 +106,7 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
     // 물류 데이터 JSON 형태로 바꿔야 함
     private fun parseMessageToMullyuList(message: String): List<MullyuLogistics> {
         val parts = message.split(",")
-        val robotId = parts[0] // 첫 번째 부분이 robot_id라고 가정
-        robotTopic = robotId
+        robotTopic = normalizeRobotName(parts[0])
 
         return parts.drop(1).map { item -> // 첫 번째 요소는 robot_id이므로 제외하고 나머지를 처리
             val itemParts = item.split("/")
@@ -115,7 +115,7 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
                 name = itemParts[0],
                 quantity = itemParts[1],
                 isProcess = false,
-                robotId = robotId // 추가된 robotId 필드에 값 설정
+                robotId = robotTopic!! // 추가된 robotId 필드에 값 설정
             )
         }
     }
