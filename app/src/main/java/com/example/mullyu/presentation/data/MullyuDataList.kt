@@ -86,8 +86,9 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
     // 메시지가 들어왔을때 실행될 함수
     private fun handleMessage(message: String) {
         // complete 메시지를 보낼 때 본인 또한 해당 주제를 구독해서 subscribe 하고 있기 때문에 해당메시지는 무시 그렇지 않으면 구독을 해제해버리게됨
-        if (message == "complete") return
-
+        if (message == "complete" || message == "accept") return
+        // 메시지를 받았다는 것을 보내줌
+        mqttClient.sendMQTTMessage("accept")
         // 데이터 처리 중에 구독 해제
         mqttClient.unSubscribe(mqttTopic)
 

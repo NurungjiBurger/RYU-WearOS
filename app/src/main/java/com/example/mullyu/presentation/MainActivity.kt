@@ -53,82 +53,102 @@ import com.example.mullyu.presentation.data.MullyuDataList
 import com.example.mullyu.presentation.data.MullyuLogistics
 
 class MainActivity : ComponentActivity() {
+    // HTTP, MQTT 사용을 위한 선언
+    // private lateinit var mullyuHTTP: MullyuHTTP
+    // private lateinit var mullyuMQTT: MullyuMQTT
+
+    // 내부 처리 로직 관리 모델 선언
     private val viewModel: MullyuViewModel by viewModels()
-    private var mullyuDataList: MullyuDataList? = null
+    // 동적 리스트를 생성하고 관리할 객체 선언
+    private lateinit var mullyuDataList: MullyuDataList
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         installSplashScreen()
         setTheme(android.R.style.Theme_DeviceDefault)
+
+        // HTTP, MQTT 사용 초기화 및 연결
+        // mullyuHTTP = MullyuHTTP()
+        // mullyuHTTP.init()
+        // mullyuHTTP.connect()
+
+        // mullyuMQTT.connectToMQTTBroker()
 
         showSectorInputDialog()
 
         setContent {
+            // 현재 화면상에 보여주어야하는 데이터
             val mullyuData by viewModel.mullyuData.collectAsStateWithLifecycle()
             val nowProcessed by viewModel.processCount.collectAsStateWithLifecycle()
             val maxProcessed by viewModel.dataList.collectAsStateWithLifecycle()
             val sectorName by viewModel.sectorName.collectAsStateWithLifecycle()
-    
-            // 섹터 이름이 설정될 때까지 앱 실행을 지연
-            if (sectorName != null) {
-                if (mullyuDataList == null) {
-                    mullyuDataList = MullyuDataList(viewModel, applicationContext, sectorName.toString())
-                    mullyuDataList?.connect()
+
+            if (sectorName != null)
+            {
+                // 동적 데이터 리스트를 관리하고 생성할 객체 초기화
+                mullyuDataList = MullyuDataList(viewModel, applicationContext, sectorName.toString())
+                // 동적으로 생성하기 위해 MQTT 연결
+                mullyuDataList.connect()
+            }
+
+            Scaffold(
+                timeText = {
+                    TimeText(
+                        timeTextStyle = TimeTextDefaults.timeTextStyle(
+                            fontSize = 10.sp,
+                            color = Color.White
+                        )
+                    )
+                },
+                vignette = {
+                    Vignette(vignettePosition = VignettePosition.TopAndBottom)
                 }
+            ) {
+                // 메시지를 수신하지 못해서 보여줄 물류 데이터가 없다면 대기화면 출력
+                if (mullyuData == null) {
 
-                Scaffold(
-                    timeText = {
-                        TimeText(
-                            timeTextStyle = TimeTextDefaults.timeTextStyle(
-                                fontSize = 10.sp,
-                                color = Color.White
-                            )
-                        )
-                    },
-                    vignette = {
-                        Vignette(vignettePosition = VignettePosition.TopAndBottom)
-                    }
-                ) {
-                    if (mullyuData == null) {
-                        if (sectorName != null) {
-                            Text(
-                                text = "Sector: $sectorName",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                        }
-
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "No Data",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.width(100.dp)
-                            )
-                        }
-                    } else {
-                        Mullyu(
-                            data = mullyuData!!,
-                            nowSize = nowProcessed,
-                            maxSize = maxProcessed.size,
-                            onConfirmClick = {
-                                viewModel.ConfirmMullyuData()
-                                mullyuDataList?.dataProcessCheck()
-                            },
-                            sectorName = sectorName,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black)
+                    if (sectorName != null) {
+                        Text(
+                            text = "Sector: $sectorName",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
+
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "No Data",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.width(100.dp)
+                        )
+                    }
+                }
+                // 메시지 수신 시 데이터를 화면에 UI와 함께 보여줄 것
+                else {
+                    Mullyu(
+                        data = mullyuData!!,
+                        nowSize = nowProcessed,
+                        maxSize = maxProcessed.size,
+                        onConfirmClick = {
+                            viewModel.ConfirmMullyuData()
+                            mullyuDataList.dataProcessCheck()
+                        },
+                        sectorName = sectorName,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black)
+                    )
                 }
             }
         }
+
     }
 
     // 섹터 이름 유효값 검사
@@ -179,7 +199,6 @@ class MainActivity : ComponentActivity() {
         dialog.show()
     }
 }
-
 @Composable
 private fun Mullyu(
     data: MullyuLogistics,
