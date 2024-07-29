@@ -53,122 +53,130 @@ import com.example.mullyu.presentation.data.MullyuDataList
 import com.example.mullyu.presentation.data.MullyuLogistics
 
 class MainActivity : ComponentActivity() {
-    // HTTP, MQTT 사용을 위한 선언
-    // private lateinit var mullyuHTTP: MullyuHTTP
-    // private lateinit var mullyuMQTT: MullyuMQTT
-
-    // 내부 처리 로직 관리 모델 선언
     private val viewModel: MullyuViewModel by viewModels()
-    // 동적 리스트를 생성하고 관리할 객체 선언
-    private lateinit var mullyuDataList: MullyuDataList
+    private var mullyuDataList: MullyuDataList? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         installSplashScreen()
         setTheme(android.R.style.Theme_DeviceDefault)
-
-        // HTTP, MQTT 사용 초기화 및 연결
-        // mullyuHTTP = MullyuHTTP()
-        // mullyuHTTP.init()
-        // mullyuHTTP.connect()
-
-        // mullyuMQTT.connectToMQTTBroker()
 
         showSectorInputDialog()
 
         setContent {
-            // 현재 화면상에 보여주어야하는 데이터
             val mullyuData by viewModel.mullyuData.collectAsStateWithLifecycle()
             val nowProcessed by viewModel.processCount.collectAsStateWithLifecycle()
             val maxProcessed by viewModel.dataList.collectAsStateWithLifecycle()
             val sectorName by viewModel.sectorName.collectAsStateWithLifecycle()
-
-            if (sectorName != null)
-            {
-                // 동적 데이터 리스트를 관리하고 생성할 객체 초기화
-                mullyuDataList = MullyuDataList(viewModel, applicationContext, sectorName.toString())
-                // 동적으로 생성하기 위해 MQTT 연결
-                mullyuDataList.connect()
-            }
-
-            Scaffold(
-                timeText = {
-                    TimeText(
-                        timeTextStyle = TimeTextDefaults.timeTextStyle(
-                            fontSize = 10.sp,
-                            color = Color.White
-                        )
-                    )
-                },
-                vignette = {
-                    Vignette(vignettePosition = VignettePosition.TopAndBottom)
+    
+            // 섹터 이름이 설정될 때까지 앱 실행을 지연
+            if (sectorName != null) {
+                if (mullyuDataList == null) {
+                    mullyuDataList = MullyuDataList(viewModel, applicationContext, sectorName.toString())
+                    mullyuDataList?.connect()
                 }
-            ) {
-                // 메시지를 수신하지 못해서 보여줄 물류 데이터가 없다면 대기화면 출력
-                if (mullyuData == null) {
 
-                    if (sectorName != null) {
-                        Text(
-                            text = "Sector: $sectorName",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                Scaffold(
+                    timeText = {
+                        TimeText(
+                            timeTextStyle = TimeTextDefaults.timeTextStyle(
+                                fontSize = 10.sp,
+                                color = Color.White
+                            )
                         )
-                    }
-
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "No Data",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.width(100.dp)
-                        )
-                    }
-            }
-                // 메시지 수신 시 데이터를 화면에 UI와 함께 보여줄 것
-                else {
-                Mullyu(
-                    data = mullyuData!!,
-                    nowSize = nowProcessed,
-                    maxSize = maxProcessed.size,
-                    onConfirmClick = {
-                        viewModel.ConfirmMullyuData()
-                        mullyuDataList.dataProcessCheck()
                     },
-                    sectorName = sectorName,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black)
-                )
+                    vignette = {
+                        Vignette(vignettePosition = VignettePosition.TopAndBottom)
+                    }
+                ) {
+                    if (mullyuData == null) {
+                        if (sectorName != null) {
+                            Text(
+                                text = "Sector: $sectorName",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
+
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "No Data",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.width(100.dp)
+                            )
+                        }
+                    } else {
+                        Mullyu(
+                            data = mullyuData!!,
+                            nowSize = nowProcessed,
+                            maxSize = maxProcessed.size,
+                            onConfirmClick = {
+                                viewModel.ConfirmMullyuData()
+                                mullyuDataList?.dataProcessCheck()
+                            },
+                            sectorName = sectorName,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black)
+                        )
+                    }
                 }
             }
         }
+    }
 
+    // 섹터 이름 유효값 검사
+    private fun isValidSectorName(name: String): Boolean {
+        val regex = Regex("^[A-Z]\\d+$")
+        return regex.matches(name)
     }
 
     private fun showSectorInputDialog() {
+        // 입력 필드 초기화
+        val input = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT
+            hint = "섹터 이름 입력"
+        }
+
+        // 다이얼로그 빌더 설정
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("섹터 이름 입력")
+            .setTitle("섹터 이름 입력")
+            .setView(input)
+            .setPositiveButton("확인", null) // 클릭 리스너는 나중에 설정
+            .setNegativeButton("취소") { dialog, _ ->
+                dialog.cancel()
+            }
 
-        val input = EditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT
-        builder.setView(input)
+        // 다이얼로그 생성
+        val dialog = builder.create()
 
-        builder.setPositiveButton("확인") { dialog, _ ->
-            viewModel.setSectorName(input.text.toString())
-            dialog.dismiss()
+        // 다이얼로그가 보여진 후 버튼 클릭 리스너 설정
+        dialog.setOnShowListener {
+            val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positiveButton.setOnClickListener {
+                val sectorName = input.text.toString().trim() // 입력값에서 공백 제거
+
+                if (sectorName.isEmpty()) {
+                    input.error = "섹터 이름을 입력하세요."
+                    input.requestFocus()
+                } else if (isValidSectorName(sectorName)) {
+                    viewModel.setSectorName(sectorName)
+                    dialog.dismiss()
+                } else {
+                    input.error = "섹터 이름은 대문자 알파벳 1개와 숫자의 조합이어야 합니다."
+                    input.requestFocus()
+                }
+            }
         }
 
-        builder.setNegativeButton("취소") { dialog, _ ->
-            dialog.cancel()
-        }
-
-        builder.show()
+        // 다이얼로그 보여주기
+        dialog.show()
     }
 }
 
