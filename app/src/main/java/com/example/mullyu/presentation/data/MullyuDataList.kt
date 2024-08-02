@@ -122,6 +122,14 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
 
     // 객체에 사용될 이름을 통해 객체의 이미지를 찾아서 넘겨줌
     private fun getDrawableResIdByName(name: String): Int {
-        return context.resources.getIdentifier(name.lowercase(), "drawable", context.packageName)
+        // 이름을 소문자로 변환하여 리소스 ID를 가져온다
+        val resId = context.resources.getIdentifier(name.lowercase(), "drawable", context.packageName)
+
+        // 리소스 ID가 0인 경우, 즉 리소스를 찾지 못한 경우, none.png의 리소스 ID를 리턴
+        return if (resId != 0) {
+            resId
+        } else {
+            context.resources.getIdentifier("none", "drawable", context.packageName)
+        }
     }
 }
