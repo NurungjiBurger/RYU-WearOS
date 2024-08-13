@@ -40,22 +40,29 @@ class MullyuViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _sectorName = MutableStateFlow<String?>("")
     val sectorName: StateFlow<String?> = _sectorName.asStateFlow()
-    
 
-    // Confirm 버튼을 누르면 해당 물류에 대한 처리가 완료되었음을 의미
+
     fun ConfirmMullyuData() {
         val currentData = _mullyuData.value ?: return
-        // 처리 완료 표시 및 DB 업데이트
         if (!currentData.isProcess) {
             viewModelScope.launch(Dispatchers.IO) {
-                currentData.isProcess = true
-                _processCount.value += 1
-                database.mullyuLogisticsDao().updateIsProcess(currentData.name)
+                try {
+                    currentData.isProcess = true
+                    database.mullyuLogisticsDao().updateIsProcess(currentData.name)
+
+                    withContext(Dispatchers.Main) {
+                        _processCount.value += 1
+                        displayNextMullyuData()
+                    }
+                } catch (e: Exception) {
+                    println("MullyuViewModel" + "Error updating process state: ${e.message}")
+                }
+            }
+        } else {
+            viewModelScope.launch(Dispatchers.Main) {
+                displayNextMullyuData()
             }
         }
-        //printAllData()
-        // 다음 물류
-        displayNextMullyuData()
     }
 
     // 모든 물품에 대한 처리 검사
@@ -72,27 +79,30 @@ class MullyuViewModel(application: Application) : AndroidViewModel(application) 
     // 데이터리스트 업데이트
     fun updateDataList(newDataList: List<MullyuLogistics>) {
         viewModelScope.launch(Dispatchers.IO) {
-            // 기존 DB 삭제
-            database.mullyuLogisticsDao().delete()
-            val lastInsertedId = database.mullyuLogisticsDao().getLastInsertedId() ?: 0
-            // ID가 너무 커지는 것을 방지하기 위해 ID가 너무 커지지 않도록 한번씩 리셋
-            if (lastInsertedId >= 1000000) {
-                database.mullyuLogisticsDao().deleteAll()
-                database.clearAllTables()
+            try {
+                // 기존 DB 삭제
+                database.mullyuLogisticsDao().delete()
+                val lastInsertedId = database.mullyuLogisticsDao().getLastInsertedId() ?: 0
+                // ID 리셋 로직
+                if (lastInsertedId >= 1000000) {
+                    database.mullyuLogisticsDao().deleteAll()
+                    database.clearAllTables()
+                }
+                // 새로운 데이터 삽입
+                if (newDataList.isNotEmpty()) {
+                    database.mullyuLogisticsDao().insertAll(newDataList)
+                }
+
+                // 메인 스레드에서 상태 업데이트
+                withContext(Dispatchers.Main) {
+                    _dataList.value = newDataList
+                    _mullyuData.value = newDataList.getOrNull(0)
+                    _processCount.value = newDataList.count { it.isProcess }
+                    _imageIndex.value = 0
+                }
+            } catch (e: Exception) {
+                println("MullyuViewModel" + "Error updating data list: ${e.message}")
             }
-            // 데이터를 다 썼을 때는 다시 No Data 표시
-            if (newDataList.size == 0) {
-                _dataList.value = emptyList()
-                _mullyuData.value = null
-            }
-            else {
-                // 새로운 DB 삽입
-                database.mullyuLogisticsDao().insertAll(newDataList)
-                _dataList.value = newDataList
-                _mullyuData.value = newDataList.getOrNull(0)
-            }
-            // 처리 완료된 데이터의 수 표시
-            _processCount.value = _dataList.value.count { it.isProcess }
         }
     }
 

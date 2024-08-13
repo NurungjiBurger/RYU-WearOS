@@ -50,6 +50,7 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import com.example.mullyu.R
 import com.example.mullyu.presentation.data.MullyuDataList
+import com.example.mullyu.presentation.data.MullyuDataListSingleton
 import com.example.mullyu.presentation.data.MullyuLogistics
 
 class MainActivity : ComponentActivity() {
@@ -86,9 +87,10 @@ class MainActivity : ComponentActivity() {
 
             if (sectorName != null)
             {
-                // 동적 데이터 리스트를 관리하고 생성할 객체 초기화
-                mullyuDataList = MullyuDataList(viewModel, applicationContext, sectorName.toString())
-                // 동적으로 생성하기 위해 MQTT 연결
+                println("robotTopic oncreate sectorName : " + sectorName)
+                mullyuDataList = MullyuDataListSingleton.getInstance(viewModel, applicationContext, sectorName.toString())
+
+                // Connect to MQTT
                 mullyuDataList.connect()
             }
 
@@ -137,6 +139,17 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        println("robotTopic : reboot")
+        viewModel.sectorName.value?.let { sectorName ->
+            println("robotTopic onresume sectorName : " + sectorName)
+            mullyuDataList = MullyuDataListSingleton.getInstance(viewModel, applicationContext, sectorName)
+            mullyuDataList.connect()
+        } ?: println("sectorName is null in onResume")
     }
 
     // 섹터 이름 유효값 검사

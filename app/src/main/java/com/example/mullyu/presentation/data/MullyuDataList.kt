@@ -10,9 +10,13 @@ import kotlinx.coroutines.launch
 
 // MQTT로 통신 후 데이터 목록 동적 생성
 class MullyuDataList(private val viewModel: MullyuViewModel, private val context: Context, private val sectorName: String) {
+
+
+
     // 주제
     private val mqttTopic = normalizeSectorName(sectorName)
     private var robotTopic: String? = null
+
     // 처리된 데이터의 수
     private val _processedCnt = MutableStateFlow(0)
     val processedCnt: StateFlow<Int> = _processedCnt.asStateFlow()
@@ -34,6 +38,7 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
 
     // MQTT에 mqttTopic으로 연결 및 구독
     fun connect() {
+        println("robotTopic connect : " + mqttTopic + " and " + mqttClient)
         mqttClient.connectToMQTTBroker()
         mqttClient.subscribe(mqttTopic)
         initalizeDataList()
@@ -62,7 +67,7 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
 
                     robotTopic = viewModel.getRobotIdFromDatabase()
 
-                    println("robot ID : ${robotTopic}")
+                    println("robot Topic : $robotTopic")
 
                     // newItems를 viewModel에 전달하여 업데이트
                     mqttClient.unSubscribe(mqttTopic)
@@ -79,6 +84,7 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
             reSubscribeTopic()
             viewModel.updateDataList(emptyList())
             // 처리가 다 되었으므로 완료 메시지 전송
+            println("robotTopic : " + robotTopic)
             mqttClient.sendMQTTMessage(robotTopic!!,"complete")
         }
     }
@@ -98,6 +104,7 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
         val newItems = parseMessageToMullyuList(message)
         viewModel.updateDataList(newItems)
 
+        println("robotTopic onmsg : " + robotTopic)
         // 메시지를 받았다는 것을 보내줌
         mqttClient.sendMQTTMessage(robotTopic!!,"accept")
     }
@@ -107,6 +114,8 @@ class MullyuDataList(private val viewModel: MullyuViewModel, private val context
     private fun parseMessageToMullyuList(message: String): List<MullyuLogistics> {
         val parts = message.split(",")
         robotTopic = normalizeRobotName(parts[0])
+
+        println("robotTopic init : " + robotTopic)
 
         return parts.drop(1).map { item -> // 첫 번째 요소는 robot_id이므로 제외하고 나머지를 처리
             val itemParts = item.split("/")
